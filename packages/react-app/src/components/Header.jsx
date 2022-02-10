@@ -7,9 +7,10 @@ export default function Header() {
   return (
     <a href="/">
       <PageHeader
-        title="🟢 Loogies"
-        subTitle=""
-        style={{ cursor: "pointer" }}
+        title="❤️❤️❤️ GWEI-LENTINES ❤️❤️❤️"
+        subTitle="on-chain candy hearts!"
+        style={{ cursor: "pointer", background: '#893867', size: "small"}}
+        
       />
     </a>
   );

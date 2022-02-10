@@ -13,7 +13,7 @@ import StackGrid from "react-stack-grid";
 import Web3Modal from "web3modal";
 import "./App.css";
 //import assets from "./assets.js";
-import { Account, Address, AddressInput, Contract, Faucet, GasGauge, Header, Ramp, ThemeSwitch } from "./components";
+import { Account, Address, AddressInput, Contract, Faucet, GasGauge, Header, Ramp, ThemeSwitch, Matrix } from "./components";
 import { DAI_ABI, DAI_ADDRESS, INFURA_ID, NETWORK, NETWORKS } from "./constants";
 import { Transactor } from "./helpers";
 import {
@@ -392,13 +392,19 @@ function App(props) {
   const galleryList = [];
 
   return (
+    
+
+
     <div className="App">
       {/* ✏️ Edit the header and change the title to your project name */}
-      <Header />
+      <Header  style={{ background: '#893867', zIndex:10}} />
       {networkDisplay}
 
+    
+      
+
       <BrowserRouter>
-        <Menu style={{ textAlign: "center" }} selectedKeys={[route]} mode="horizontal">
+        <Menu style={{ background: '#893867', zIndex:10,textAlign: "center" }} selectedKeys={[route]} mode="horizontal" >
           <Menu.Item key="/">
             <Link
               onClick={() => {
@@ -406,10 +412,10 @@ function App(props) {
               }}
               to="/"
             >
-              Your Loogies
+              Hearts
             </Link>
           </Menu.Item>
-          <Menu.Item key="/debug">
+          <Menu.Item key="/debug" zIndex={10}>
             <Link
               onClick={() => {
                 setRoute("/debug");
@@ -422,35 +428,39 @@ function App(props) {
         </Menu>
 
         <Switch>
-          <Route exact path="/">
+          <Route exact path="/" zIndex={10}>
             {/*
                 🎛 this scaffolding is full of commonly used components
                 this <Contract/> component will automatically parse your ABI
                 and give you a form to interact with it locally
             */}
+            <Matrix width={12800} height={10000} speed={2} style ={2} />
+           
 
-            <div style={{ maxWidth: 820, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
+            <div style={{maxWidth: 820, margin: "auto", marginTop: "-45%", paddingBottom: "0%", zIndex: 100}}>
               {isSigner?(
-                <Button type={"primary"} onClick={()=>{
+                <Button size={"lg"} style={{ background: "#FF69B4", borderColor: "#FF0000" }} type={"ghost"} fontSize={96} onClick={()=>{
                   tx( writeContracts.YourCollectible.mintItem() )
                 }}>MINT</Button>
               ):(
-                <Button type={"primary"} onClick={loadWeb3Modal}>CONNECT WALLET</Button>
+                <Button size={"lg"} type={"primary"} onClick={loadWeb3Modal}>CONNECT WALLET</Button>
               )}
 
             </div>
 
-            <div style={{ width: 820, margin: "auto", paddingBottom: 256 }}>
-              <List
-                bordered
+            <div style={{ width: 500, margin: "auto", paddingTop: 20, paddingBottom:50, zIndex: 100 }}>
+              <List               
+                bordered={false}              
                 dataSource={yourCollectibles}
+                
                 renderItem={item => {
                   const id = item.id.toNumber();
 
                   console.log("IMAGE",item.image)
+                  
 
                   return (
-                    <List.Item key={id + "_" + item.uri + "_" + item.owner}>
+                    <List.Item key={id + "_" + item.uri + "_" + item.owner} >
                       <Card
                         title={
                           <div>
@@ -474,7 +484,7 @@ function App(props) {
                         />
                         <AddressInput
                           ensProvider={mainnetProvider}
-                          placeholder="transfer to address"
+                          placeholder="send to valentine"
                           value={transferToAddresses[id]}
                           onChange={newValue => {
                             const update = {};
@@ -488,7 +498,7 @@ function App(props) {
                             tx(writeContracts.YourCollectible.transferFrom(address, transferToAddresses[id], id));
                           }}
                         >
-                          Transfer
+                          send2valentine
                         </Button>
                       </div>
                     </List.Item>
@@ -496,7 +506,7 @@ function App(props) {
                 }}
               />
             </div>
-            <div style={{ maxWidth: 820, margin: "auto", marginTop: 32, paddingBottom: 256 }}>
+            <div style={{ maxWidth: 820, margin: "auto", marginTop: 32, paddingBottom: 256, zIndex:20 }}>
 
               🛠 built with <a href="https://github.com/austintgriffith/scaffold-eth" target="_blank">🏗 scaffold-eth</a>
 

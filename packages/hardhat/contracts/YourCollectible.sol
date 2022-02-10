@@ -27,7 +27,7 @@ contract YourCollectible is ERC721, Ownable {
 
   mapping (uint256 => bytes3) public color;
   mapping (uint256 => uint256) public chubbiness;
-  mapping (string => string) public messages;
+  mapping (uint256 => uint256) public messages;
 
   uint256 mintDeadline = block.timestamp + 24 hours;
 
@@ -42,16 +42,18 @@ contract YourCollectible is ERC721, Ownable {
       _mint(msg.sender, id);
 
       bytes32 predictableRandom = keccak256(abi.encodePacked( blockhash(block.number-1), msg.sender, address(this), id ));
+      bytes32 predictableRandomToo = keccak256(abi.encodePacked( blockhash(block.number-1), msg.sender, address(this), id ));
       color[id] = bytes2(predictableRandom[0]) | ( bytes2(predictableRandom[1]) >> 8 ) | ( bytes3(predictableRandom[2]) >> 16 );
       chubbiness[id] = 35+((55*uint256(uint8(predictableRandom[3])))/255);
+      messages[id] = (uint8(predictableRandomToo[4]) % 12 );
 
       return id;
   }
 
   function tokenURI(uint256 id) public view override returns (string memory) {
       require(_exists(id), "not exist");
-      string memory name = string(abi.encodePacked('Loogie #',id.toString()));
-      string memory description = string(abi.encodePacked('This Loogie is the color #',color[id].toColor(),' with a chubbiness of ',uint2str(chubbiness[id]),'!!!'));
+      string memory name = string(abi.encodePacked('Candy Hearts Crypto Club #',id.toString()));
+      string memory description = string(abi.encodePacked('This cryptoheart beats the color #',color[id].toColor(),' !!!'));
       string memory image = Base64.encode(bytes(generateSVGofTokenById(id)));
 
       return
@@ -97,12 +99,14 @@ contract YourCollectible is ERC721, Ownable {
 
   // Visibility is `public` to enable it being called by other contracts for composition.
   function renderTokenById(uint256 id) public view returns (string memory) {
+    string[12] memory messageTxt = ['WILL U BE MINED', 'HODL ME', '0x0x', '⛵FRONT RUN ME⛵', 'MEV AND CHILL?', 'UR ON MY WHITELIST', 'DECENTRALIZE ME BABY', 'UR MY 1/1', 'BE MY BAYC', 'I ⟠ U', 'MAXI 4 U', 'ON-CHAIN HOTTIE' ] ;
     string memory render = string(abi.encodePacked(
         '<g id="head">',
           '<path id="Bottom" d="M70,279.993C70,279.993 63.297,379.987 70,427.647C85.329,536.631 300.49,820.025 450.016,820.025C599.542,820.025 817.839,533.159 830.014,423.782C835.6,373.594 830.007,280.007 830.007,280.007" style="fill:#', 
           color[id].toColor(), ';stroke:rgb(0,0,0);stroke-width:5px;"/>',
         '<path id="Top" d="M449.75,149.777C426.146,149.777 401.744,80.04 249.999,80.001C139.6,79.972 70,169.594 70,279.993C70,450.051 347.857,689.996 450.004,689.996C552.151,689.996 830.007,449.95 830.007,280.007C830.007,169.801 760.231,80.049 650.026,80.049C486.311,80.049 473.355,149.777 449.75,149.777Z" style="fill:#',
         color[id].toColor(), ';stroke:rgb(0,0,0);stroke-width:5px;"/>',
+        '<text x="50%" y="40%" dominant-baseline="middle" text-anchor="middle" stroke="rgb(211, 73, 78)" stroke-width= "5" font-weight="400" font-size="48" font-family="Helvetica" fill="rgb(211, 73, 78)">' , messageTxt[messages[id]], '</text>',
         '</g>'
       ));
 
