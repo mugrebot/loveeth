@@ -17,3 +17,4 @@ export { default as Timeline } from "./Timeline";
 export { default as TokenBalance } from "./TokenBalance";
 export { default as Wallet } from "./Wallet";
 export { default as Matrix } from "./Matrix";
+export {default as increment} from "./increment";

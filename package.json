@@ -61,5 +61,8 @@
       "**/hardhat",
       "**/hardhat/**"
     ]
+  },
+  "dependencies": {
+    "optimized": "^1.2.0"
   }
 }

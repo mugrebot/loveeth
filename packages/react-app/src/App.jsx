@@ -2,7 +2,7 @@ import { LinkOutlined } from "@ant-design/icons";
 import { StaticJsonRpcProvider, Web3Provider } from "@ethersproject/providers";
 import { formatEther, parseEther } from "@ethersproject/units";
 import WalletConnectProvider from "@walletconnect/web3-provider";
-import { Alert, Button, Card, Col, Input, List, Menu, Row } from "antd";
+import { Alert, Button, Card, Col, Input, List, Menu, Row, inputnumber, InputNumber } from "antd";
 import "antd/dist/antd.css";
 import { useUserAddress } from "eth-hooks";
 import { utils } from "ethers";
@@ -11,9 +11,10 @@ import ReactJson from "react-json-view";
 import { BrowserRouter, Link, Route, Switch } from "react-router-dom";
 import StackGrid from "react-stack-grid";
 import Web3Modal from "web3modal";
+import { YourLoogies, Loogies } from "./views";
 import "./App.css";
 //import assets from "./assets.js";
-import { Account, Address, AddressInput, Contract, Faucet, GasGauge, Header, Ramp, ThemeSwitch, Matrix } from "./components";
+import { Account, Address, AddressInput, Contract, Faucet, GasGauge, Header, Ramp, ThemeSwitch, Matrix, increment } from "./components";
 import { DAI_ABI, DAI_ADDRESS, INFURA_ID, NETWORK, NETWORKS } from "./constants";
 import { Transactor } from "./helpers";
 import {
@@ -26,6 +27,7 @@ import {
   useGasPrice,
   useOnBlock,
   useUserProvider,
+  useLocalStorage
 } from "./hooks";
 import { BlockPicker } from 'react-color'
 
@@ -58,7 +60,7 @@ const ipfs = ipfsAPI({ host: "ipfs.infura.io", port: "5001", protocol: "https" }
 */
 
 /// 📡 What chain are your contracts deployed to?
-const targetNetwork = NETWORKS.localhost; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+const targetNetwork = NETWORKS.rinkeby; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
 const DEBUG = true;
@@ -128,6 +130,14 @@ function App(props) {
      }, 1);
   };
 
+  //pages
+  const [page, setPage] = useState(1);
+  const perPage = 4;
+
+  //mint ammt
+  const [MintAmmt, setMintAmmt] = useState();
+
+
   const [injectedProvider, setInjectedProvider] = useState();
   /* 💵 This hook will get the price of ETH from 🦄 Uniswap: */
   const price = useExchangePrice(targetNetwork, mainnetProvider);
@@ -185,6 +195,16 @@ function App(props) {
   // 📟 Listen for broadcast events
   const transferEvents = useEventListener(readContracts, "YourCollectible", "Transfer", localProvider, 1);
   console.log("📟 Transfer events:", transferEvents);
+
+  const [ setQuantity, setToQuantity ] = useState()
+  const [ quantity, ToQuantity] = useState();
+
+ 
+    //supply
+    const totalSupply = useContractReader(readContracts, "YourCollectible", "totalSupply");
+    if (DEBUG) console.log("🤗 totalSupply:", totalSupply);
+    const heartsLeft= 2222 - totalSupply;
+  
 
   //
   // 🧠 This effect will update yourCollectibles by polling when your balance changes
@@ -434,33 +454,75 @@ function App(props) {
                 this <Contract/> component will automatically parse your ABI
                 and give you a form to interact with it locally
             */}
-            <Matrix width={12800} height={10000} speed={2} style ={2} />
+            <Matrix width={12800} height={10000} speed={2} style ={2} zIndex={1} />
            
 
-            <div style={{maxWidth: 820, margin: "auto", marginTop: "-45%", paddingBottom: "0%", zIndex: 100}}>
+            <div style={{maxWidth: 820, margin: "auto", marginTop: "-48%", paddingBottom: "0%", zIndex: 100}}>
+
+            <InputNumber 
+            defaultValue={1}
+            max={5}
+            min={1}            
+            onChange = {MintAmmt => {
+              setMintAmmt(MintAmmt);
+            }}
+
+            type="button"
+       />
               {isSigner?(
-                <Button size={"lg"} style={{ background: "#FF69B4", borderColor: "#FF0000" }} type={"ghost"} fontSize={96} onClick={()=>{
-                  tx( writeContracts.YourCollectible.mintItem() )
+              
+                         
+
+              
+              <Button 
+                size={"lg"} style={{ background: "#FF69B4", borderColor: "#FF0000" }} type={"ghost"} fontSize={96} onClick={()=>{
+                  tx( writeContracts.YourCollectible.mintItem(MintAmmt) )
                 }}>MINT</Button>
+
+                
               ):(
                 <Button size={"lg"} type={"primary"} onClick={loadWeb3Modal}>CONNECT WALLET</Button>
               )}
+          <h1 zIndex={1000} style={{textAlign:"center", color:"white", background:"red", borderColor:"white", fontWeight: "bolder", zIndex: "20", margin: "auto"}} >
+          { heartsLeft } left
+        </h1>
+              
+                      
+
+
 
             </div>
 
-            <div style={{ width: 500, margin: "auto", paddingTop: 20, paddingBottom:50, zIndex: 100 }}>
-              <List               
-                bordered={false}              
-                dataSource={yourCollectibles}
-                
-                renderItem={item => {
-                  const id = item.id.toNumber();
-
-                  console.log("IMAGE",item.image)
+            <div style={{ width: 1800, margin: "auto", zIndex: 100 }}>
+              <List  
+                          
+            grid={{
+              gutter: 8,
+              xs: 1,
+              sm: 2,
+              md: 2,
+              lg: 3,
+              xl: 4,
+              xxl: 4,
+            }}
+            pagination={{
+              total: totalSupply,
+              defaultPageSize: perPage,
+              defaultCurrent: page,
+              onChange: currentPage => {
+                setPage(currentPage);
+              },
+              showTotal: (total, range) => `${range[0]}-${range[1]} of ${totalSupply} items`,
+            }}
+         
+            dataSource={yourCollectibles}
+            renderItem={item => {
+              const id = item.id.toNumber();
                   
 
                   return (
                     <List.Item key={id + "_" + item.uri + "_" + item.owner} >
+                      
                       <Card
                         title={
                           <div>
@@ -468,8 +530,8 @@ function App(props) {
                           </div>
                         }
                       >
-                        <a href={"https://opensea.io/assets/"+(readContracts && readContracts.YourCollectible && readContracts.YourCollectible.address)+"/"+item.id} target="_blank">
-                        <img src={item.image} />
+                        <a href={"https://opensea.io/assets/"+(readContracts && readContracts.YourCollectible && readContracts.YourCollectible.address)+"/"+item.id} target="_blank" >
+                        <img src={item.image} alt={"<3 #" + id} width={400} />
                         </a>
                         <div>{item.description}</div>
                       </Card>
@@ -484,7 +546,7 @@ function App(props) {
                         />
                         <AddressInput
                           ensProvider={mainnetProvider}
-                          placeholder="send to valentine"
+                          placeholder="<3"
                           value={transferToAddresses[id]}
                           onChange={newValue => {
                             const update = {};
@@ -506,7 +568,7 @@ function App(props) {
                 }}
               />
             </div>
-            <div style={{ maxWidth: 820, margin: "auto", marginTop: 32, paddingBottom: 256, zIndex:20 }}>
+            <div style={{ maxWidth: 820, margin: "auto", marginTop: 32, paddingBottom: 25, zIndex:20 }}>
 
               🛠 built with <a href="https://github.com/austintgriffith/scaffold-eth" target="_blank">🏗 scaffold-eth</a>
 
@@ -551,7 +613,7 @@ function App(props) {
       </div>
 
       {/* 🗺 Extra UI like gas price, eth price, faucet, and support: */}
-      <div style={{ position: "fixed", textAlign: "left", left: 0, bottom: 20, padding: 10 }}>
+      <div style={{ position: "fixed", textAlign: "left", left: 0, bottom: 20}}>
         <Row align="middle" gutter={[4, 4]}>
           <Col span={8}>
             <Ramp price={price} address={address} networks={NETWORKS} />

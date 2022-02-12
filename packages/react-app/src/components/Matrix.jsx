@@ -104,7 +104,7 @@ export default class Matrix extends React.Component {
     render() {
         let style = this.props.style ? this.props.style : {};
         return (
-            <div style={{...style, background: '#e75480', width: this.props.fullscreen ? '100vw' : this.props.width + 'px', height:  this.props.fullscreen ? '100vh' : this.props.height + '300px', overflow: 'hidden', zIndex: this.props.zIndex}}>
+            <div style={{...style, background: '#e75480', width: this.props.fullscreen ? '100vw' : this.props.width + 'px', height:  this.props.fullscreen ? '100vh' : this.props.height + 'px', overflow: 'hidden', zIndex: this.props.zIndex}}>
                 <canvas ref='canvas'/>
             </div>
         );
