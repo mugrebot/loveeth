@@ -4,9 +4,13 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721B.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import 'base64-sol/base64.sol';
+import "@openzeppelin/contracts/Security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/introspection/IERC2981.sol";
+import "@openzeppelin/contracts/introspection/ERC165.sol";
 
 import './HexStrings.sol';
 import './ToColor.sol';
@@ -14,18 +18,51 @@ import './ToColor.sol';
 
 // GET LISTED ON OPENSEA: https://testnets.opensea.io/get-listed/step-two
 
-contract YourCollectible is ERC721B, Ownable {
+abstract contract ERC2981ContractWideRoyalties is IERC2981, ERC165 {
+    address private _royaltiesRecipient;
+    uint256 private _royaltiesValue;
+
+
+
+    /// @dev Sets token royalties
+    /// @param recipient recipient of the royalties
+    /// @param value percentage (using 2 decimals - 10000 = 100, 0 = 0)
+    function _setRoyalties(address recipient, uint256 value) internal {
+        require(value <= 10000, 'ERC2981Royalties: Too high');
+        _royaltiesRecipient = recipient;
+        _royaltiesValue = value;
+    }
+
+    /// @inheritdoc	IERC2981
+    function royaltyInfo(uint256, uint256 value)
+        external
+        view
+        override
+        returns (address receiver, uint256 royaltyAmount)
+    {
+        return (_royaltiesRecipient, (value * _royaltiesValue) / 10000);
+    }
+}
+
+contract YourCollectible is ERC721B, Ownable, ReentrancyGuard, ERC2981ContractWideRoyalties {
 
   using Strings for uint256;
   using HexStrings for uint160;
   using ToColor for bytes3;
   using Counters for Counters.Counter;
   Counters.Counter private _tokenIds;
+  bool public mintingActive = false;
+
+   address payable public constant recipient =
+    payable(0xDf8256c71dAe2Aa5D0FB8ECEDa68d2F9E1eB3b2E);
+
+    uint256 public price = 0.00 ether;
 
 
 
-  constructor() public ERC721B("ETHERHEARTS", "EHRT") {
+  constructor() public ERC721B("ETHERHEARTS", "EHRT") Ownable() {
     // RELEASE THE LOOGIES!
+    _setRoyalties(owner(), 130);
   }
 
 
@@ -34,15 +71,70 @@ contract YourCollectible is ERC721B, Ownable {
   mapping (uint256 => uint256) public messages;
   mapping (uint256 => uint256) public chubbiness;
   uint256 mintDeadline = block.timestamp + 24 hours;
+  
+            
+
+      function isContract(address account) internal view returns (bool) {
+        // This method relies on extcodesize, which returns 0 for contracts in
+        // construction, since the code is only stored at the end of the
+        // constructor execution.
+
+        uint256 size;
+        assembly {
+            size := extcodesize(account)
+        }
+        return size > 0;
+    }
+
+
+
+        function activeCheck() public onlyOwner {
+          owner();
+
+        mintingActive = !mintingActive;
+    }
+
+      function devMintItem(uint256 quantity)
+      public
+      
+      onlyOwner     
+      returns (uint256)
+      
+  { 
+  
+
+
+      uint256 id; 
+      _safeMint(msg.sender, quantity);
+      for (uint i=0; i < quantity; i++)   {
+      _tokenIds.increment();
+      id = _tokenIds.current();
+     
+      tokenURI(id);
+      
+     
+      bytes32 predictableRandom = keccak256(abi.encodePacked( blockhash(block.number+quantity), address(this), id, quantity));  
+      color[id] = bytes2(predictableRandom[0]) | ( bytes2(predictableRandom[1]) >> 8 ) | ( bytes3(predictableRandom[2]) >> 16 );
+  
+      messages[id] = (uint8(predictableRandom[4]) % 29 );
+      }
+    
+      return id;
+  }
 
   function mintItem(uint256 quantity)
-      public      
+      public  
+      nonReentrant    
       returns (uint256)
   { 
       uint256 lastTokenId = super.totalSupply();
-      require( block.timestamp < mintDeadline, 'DONE MINTING');  
-      require( quantity <=uint256(5), 'leave some for the rest of us!');
-      require( lastTokenId + quantity <= uint256(222), 'till next year loves');
+      require( block.timestamp < mintDeadline, 'DONE MINTING');
+      require(mintingActive, '\u2764\ufe0f minting soon \u2764\ufe0f');  
+      require( quantity <=uint256(5), 'leave some \u2764\ufe0f for the rest of us!');
+      require( lastTokenId + quantity <= uint256(222), 'till next year loves \u2764\ufe0f');
+      require(!isContract(msg.sender), 'no bots allowed fren.');
+
+      price = price;
 
       uint256 id; 
       _safeMint(msg.sender, quantity);
@@ -56,8 +148,10 @@ contract YourCollectible is ERC721B, Ownable {
       bytes32 predictableRandom = keccak256(abi.encodePacked( blockhash(block.number+quantity), address(this), id, quantity));  
       color[id] = bytes2(predictableRandom[0]) | ( bytes2(predictableRandom[1]) >> 8 ) | ( bytes3(predictableRandom[2]) >> 16 );
   
-      messages[id] = (uint8(predictableRandom[4]) % 13 );
+      messages[id] = (uint8(predictableRandom[4]) % 29 );
       }
+
+
     
       return id;
   }
@@ -67,7 +161,7 @@ contract YourCollectible is ERC721B, Ownable {
   function tokenURI(uint256 id) public view override returns (string memory) {
       require(_exists(id), "not exist");
       
-      string memory name = string(abi.encodePacked('Ether Heart #',id.toString()));
+      string memory name = string(abi.encodePacked('EtherHeart #',id.toString()));
       string memory description = string(abi.encodePacked('this heart beats the color#',color[id].toColor(),' !!!'));
       string memory image = Base64.encode(bytes(generateSVGofTokenById(id)));
       
@@ -83,7 +177,7 @@ contract YourCollectible is ERC721B, Ownable {
                               name,
                               '", "description":"',
                               description,
-                              '", "external_url":"https://burnyboys.com/token/',
+                              '", "external_url":"https://buidlguidl.com',
                               id.toString(),
                               '", "attributes": [{"trait_type": "color", "value": "#',
                               color[id].toColor(),
@@ -115,7 +209,7 @@ contract YourCollectible is ERC721B, Ownable {
 
   // Visibility is `public` to enable it being called by other contracts for composition.
   function renderTokenById(uint256 id) public view returns (string memory) {
-    string[29] memory messageTxt = [ 'RIGHT-CLICK MY HEART', 'U RUGGED MY HEART', 'BE MINED', 'HODL ME', '0x0x', 'FRONT RUN ME', 'MEV AND CHILL?', 'UR ON MY WHITELIST', 'DECENTRALIZE ME BABY', 'UR MY 1/1', 'BE MY BAYC', 'ARE U EVM COMPATIBLE', 'MAXI 4 U', 'ON-CHAIN HOTTIE', 'U R NONFUNGIBLE TO ME', 'U R MY CRYPTONITE', 'CURATE ME', 'GWEI OUT WITH ME', 'WHATS YOUR SEEDPHRASE', 'UR A FOX', 'ETHERSCAN ME', 'OPEN TO YOUR SEA', 'UR MY FOUNDATION', 'U R SUPERRARE', 'ILY.ETH', '$LOOK-in GOOD', 'JPEG ME', 'NON-FUNGIBLE BABY', 'MY LOVE IS LIQUID'  ] ;
+    string[32] memory messageTxt = [ 'RIGHT-CLICK MY HEART','I \u27e0 U','U SWEPT ME OFF MY FLOOR','TOGETHER TILL \u27e0 2.0 SHIPS', 'U RUG MY WORLD', 'BE MINED', 'HODL ME', '0x0x', 'FRONT RUN ME', 'MEV AND CHILL?', 'UR ON MY WHITELIST', 'DECENTRALIZE ME BABY', 'UR MY 1/1', 'BE MY BAY-C', 'EVM COMPATIBLE', 'MAXI 4 U', 'ON-CHAIN HOTTIE', 'U R NONFUNGIBLE TO ME', 'U R MY CRYPTONITE', 'CURATE ME', 'GWEI OUT WITH ME', 'SEEDPHRASE 2 MY \u2764\ufe0f', 'UR A FOX', 'ETHERSCAN ME', '\u26f5 OPEN TO YOUR SEA \u26f5', 'UR MY FOUNDATION', 'U R SUPERRARE', 'ILY.ETH', '$LOOK-in GOOD', 'JPEG ME', 'NON-FUNGIBLE BABY', 'MY LOVE IS LIQUID'  ] ;
     string memory render = string(abi.encodePacked(
         '<g id="head">',
           '<path id="Bottom" d="M70,279.993C70,279.993 63.297,379.987 70,427.647C85.329,536.631 300.49,820.025 450.016,820.025C599.542,820.025 817.839,533.159 830.014,423.782C835.6,373.594 830.007,280.007 830.007,280.007" style="fill:#', 

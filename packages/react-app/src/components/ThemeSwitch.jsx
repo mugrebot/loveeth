@@ -13,7 +13,7 @@ export default function ThemeSwitcher() {
 
   const toggleTheme = isChecked => {
     setIsDarkMode(isChecked);
-    switcher({ theme: isChecked ? themes.dark : themes.light });
+    switcher({ theme: isChecked ? themes.dark : themes.dark });
   };
 
   // Avoid theme change flicker
@@ -23,7 +23,7 @@ export default function ThemeSwitcher() {
 
   return (
     <div className="main fade-in" style={{ position: "fixed", right: 8, bottom: 8 }}>
-      <span style={{ padding: 8 }}>{currentTheme === "light" ? "☀️" : "🌜"}</span>
+      <span style={{ padding: 8 }}>{currentTheme === "dark" ? "💕" : "🌜"}</span>
       <Switch checked={isDarkMode} onChange={toggleTheme} />
     </div>
   );

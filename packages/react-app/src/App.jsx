@@ -2,10 +2,11 @@ import { LinkOutlined } from "@ant-design/icons";
 import { StaticJsonRpcProvider, Web3Provider } from "@ethersproject/providers";
 import { formatEther, parseEther } from "@ethersproject/units";
 import WalletConnectProvider from "@walletconnect/web3-provider";
-import { Alert, Button, Card, Col, Input, List, Menu, Row, inputnumber, InputNumber } from "antd";
+import { Alert, Button, Card, Col, Input, List, Menu, Row, inputnumber, InputNumber, Typography, AutoComplete} from "antd";
 import "antd/dist/antd.css";
 import { useUserAddress } from "eth-hooks";
 import { utils } from "ethers";
+
 import React, { useCallback, useEffect, useState } from "react";
 import ReactJson from "react-json-view";
 import { BrowserRouter, Link, Route, Switch } from "react-router-dom";
@@ -60,7 +61,7 @@ const ipfs = ipfsAPI({ host: "ipfs.infura.io", port: "5001", protocol: "https" }
 */
 
 /// 📡 What chain are your contracts deployed to?
-const targetNetwork = NETWORKS.rinkeby; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+const targetNetwork = NETWORKS.localhost; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
 const DEBUG = true;
@@ -136,6 +137,9 @@ function App(props) {
 
   //mint ammt
   const [MintAmmt, setMintAmmt] = useState();
+
+  //donAmmt
+  const [DonAmmt, setDonAmmt] = useState();
 
 
   const [injectedProvider, setInjectedProvider] = useState();
@@ -435,16 +439,28 @@ function App(props) {
               Hearts
             </Link>
           </Menu.Item>
-          <Menu.Item key="/debug" zIndex={10}>
+          <Menu.Item key="/donate" zIndex={10}>
             <Link
               onClick={() => {
-                setRoute("/debug");
+                setRoute("/donate");
               }}
-              to="/debug"
+              to="/donate"
             >
-              Smart Contract
+              Donate ❤️
             </Link>
           </Menu.Item>
+          <Menu.Item key="/contract" zIndex={10}>
+            <Link
+              onClick={() => {
+                setRoute("/contract");
+              }}
+              to="/contract"
+            >
+              Contract
+            </Link>
+          </Menu.Item>
+
+
         </Menu>
 
         <Switch>
@@ -454,13 +470,13 @@ function App(props) {
                 this <Contract/> component will automatically parse your ABI
                 and give you a form to interact with it locally
             */}
-            <Matrix width={12800} height={10000} speed={2} style ={2} zIndex={1} />
-           
+            <Matrix width={12800} height={10000} speed={2} style ={3} />
+
 
             <div style={{maxWidth: 820, margin: "auto", marginTop: "-48%", paddingBottom: "0%", zIndex: 100}}>
-
+            
             <InputNumber 
-            defaultValue={1}
+            defaultValue={0}
             max={5}
             min={1}            
             onChange = {MintAmmt => {
@@ -475,17 +491,36 @@ function App(props) {
 
               
               <Button 
-                size={"lg"} style={{ background: "#FF69B4", borderColor: "#FF0000" }} type={"ghost"} fontSize={96} onClick={()=>{
-                  tx( writeContracts.YourCollectible.mintItem(MintAmmt) )
+                size={"lg"} style={{ background: "#FF69B4", borderColor: "#FF0000"}} type={"ghost"} fontSize={96} onClick={async ()=>{
+                  
+                  try {               
+                    const txCur = await tx(writeContracts.YourCollectible.mintItem( MintAmmt));
+                    await txCur.wait();
+                  }catch (e) {
+                    console.log("mint failed", e);
+                  }
+                  
                 }}>MINT</Button>
 
                 
               ):(
                 <Button size={"lg"} type={"primary"} onClick={loadWeb3Modal}>CONNECT WALLET</Button>
               )}
-          <h1 zIndex={1000} style={{textAlign:"center", color:"white", background:"red", borderColor:"white", fontWeight: "bolder", zIndex: "20", margin: "auto"}} >
-          { heartsLeft } left
-        </h1>
+    <div style={{
+      display: 'block', width: 75, padding: 5, margin: "auto"
+    }}>
+            
+<Card  bodyStyle={{padding:"0"}} size="small" bordered={false} style={{padding:"0", margin:"auto", width:75, height:20, color: "white",backgroundColor:"#FF69B4", borderColor: "#FF0001"}}>
+    {`${heartsLeft} left`}
+
+
+
+  
+
+ 
+</Card>
+    </div>
+        
               
                       
 
@@ -576,7 +611,7 @@ function App(props) {
 
             </div>
           </Route>
-          <Route path="/debug">
+          <Route path="/contract">
 
             <div style={{padding:32}}>
               <Address value={readContracts && readContracts.YourCollectible && readContracts.YourCollectible.address} />
@@ -590,10 +625,71 @@ function App(props) {
               blockExplorer={blockExplorer}
             />
           </Route>
+
+          <Route path="/donate">
+          <div style={{padding:15}}>
+          <Input
+            style={{ margin: "auto", textAlign: "center", width: 250, top:150}}            
+            placeholder={"Donate to the BuidlGuidl!"}
+            
+            value={DonAmmt}
+            onChange = {DonAmmt => {
+              setDonAmmt(DonAmmt.target.value);
+            }}
+
+            type="input"
+            
+       />
+
+
+
+
+       
+            
+          </div>
+          <Button style={{ top:150, background: "#FF69B4", borderColor: "#FF0000"}} size={"lg"} type={"primary"} onClick={async ()=>{
+                  const deployerWallet = userProvider.getSigner()
+                 
+                  
+                  await deployerWallet.sendTransaction({
+                    to: "0x34aA3F359A9D614239015126635CE7732c18fDF3",
+                    value: utils.parseEther(`${DonAmmt}`)                    
+                  })
+                }}>DONATE</Button>
+                <div style={{ margin:"auto", textAlign: "center", padding: 10 }}>
+
+<Card  bodyStyle={{padding:"0"}} size="small" bordered={false} style={{top: 150, margin:"auto", width:150, height:20}}>
+<a color="white" href={"https://buidlguidl.com"} >Buidl Guidl Website</a>
+
+
+
+  
+
+ 
+</Card>
+</div>
+    <div style={{ display:"inline-block", position: "fixed", textAlign: "right", right: 10, bottom: 80, padding: 0 }}><a padding="10" href={"https://twitter.com/m00npapi"} >Follow me on Twitter!</a></div>
+    <div style={{ display:"inline-block", position: "fixed", textAlign: "right", right: 10, bottom: 60, padding: 0 }}><a href={"https://opensea.io/assets/"} >Join the Ether Hearts Discord!</a></div>
+    <div style={{ display:"inline-block", position: "fixed", textAlign: "right", right: 10, bottom: 40, padding: 0 }}><a href={"https://stage.buidlguidl.com/builders/0x38B2bAC6431604dFfEc17a1E6Adc649a9Ea0eFba"} >Builder: m00npapi.eth</a></div>
+
+    <div style={{ display:"inline-block", position: "fixed", textAlign: "right", right: 10, bottom: 20, padding: 0 }}><a href={"https://github.com/mugrebot/loveeth"} >This repo was forked from Loogies-SVG-NFT Check out the changes on GitHub!</a></div>
+ 
+    
+ 
+
+
+ 
+                        
+                      
+  
+ 
+                  
+
+          </Route>
         </Switch>
       </BrowserRouter>
 
-      <ThemeSwitch />
+      
 
       {/* 👨‍💼 Your account is in the top right with a wallet at connect options */}
       <div style={{ position: "fixed", textAlign: "right", right: 0, top: 0, padding: 10 }}>
